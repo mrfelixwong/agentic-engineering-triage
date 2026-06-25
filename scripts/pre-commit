@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Triage verification gate.
+#
+# Refuses the commit if the test suite fails or the eval drops below baseline.
+# This is the gate Part 3 of the verification lesson installs. Install it with:
+#
+#   ln -sf ../../scripts/pre-commit .git/hooks/pre-commit
+#
+# Run from the repo root. Uses the project venv if present.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+if [ -x ".venv/bin/python" ]; then
+  PY=".venv/bin/python"
+else
+  PY="python3"
+fi
+
+echo "[gate] running tests..."
+"$PY" -m pytest -q
+
+echo "[gate] running eval..."
+"$PY" -m eval.run
+
+echo "[gate] ok"

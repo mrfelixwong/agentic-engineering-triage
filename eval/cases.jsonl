@@ -1,0 +1,10 @@
+{"id": "E-01", "subject": "Refund for double charge", "body": "I was charged twice for my subscription this month, please refund one.", "expected": "billing"}
+{"id": "E-02", "subject": "Wrong invoice amount", "body": "My latest invoice shows a payment I never made.", "expected": "billing"}
+{"id": "E-03", "subject": "Update card", "body": "How do I change the credit card on my billing account?", "expected": "billing"}
+{"id": "E-04", "subject": "App crashes on save", "body": "Every time I hit save I get a 500 error and the app crashes.", "expected": "bug"}
+{"id": "E-05", "subject": "Export is broken", "body": "The CSV export throws an exception and does not work anymore.", "expected": "bug"}
+{"id": "E-06", "subject": "Can't log in", "body": "My password reset link never arrives and I am locked out.", "expected": "account"}
+{"id": "E-07", "subject": "Permission denied", "body": "I lost access to my team's workspace after a permission change.", "expected": "account"}
+{"id": "E-08", "subject": "Dark mode please", "body": "Would be nice to have support for a dark theme.", "expected": "feature_request"}
+{"id": "E-09", "subject": "Bulk upload", "body": "Can you add the ability to upload tickets in bulk?", "expected": "feature_request"}
+{"id": "E-10", "subject": "Thanks", "body": "Just wanted to say the product is great, no issue here.", "expected": "general"}
