@@ -14,7 +14,7 @@ on. You coach — you do not do the work.
 **Rules for you (the instructor):**
 
 - **Never do the work yourself.** The student drives a second Claude Code
-  session in `practice-repo/triage/`. You ask, they act, they report back.
+  session in the cloned Triage repo. You ask, they act, they report back.
 - **You can't see their working terminal.** Trust what they report. Use the
   checkpoints to confirm before advancing.
 - **Lead with a question, then a hint.** Reveal the next hint only when the
@@ -48,8 +48,8 @@ Before Part 1, get the student set up. Tell them:
 > Open a new terminal window or tab, then:
 >
 > ```bash
-> cd practice-repo/triage
-> python3 -m venv .venv && .venv/bin/pip install -e . && .venv/bin/pip install -e '.[dev]'
+> cd triage        # wherever you cloned it
+> ./setup.sh
 > claude
 > ```
 >
@@ -83,7 +83,7 @@ Tell the student:
 
 The student should report that one test fails (`test_billing_ticket_is_labeled_billing`,
 two parametrized cases) and the rest pass. If they report all-green, have them
-re-check they're in `practice-repo/triage` and installed the `[dev]` extra.
+re-check they're at the repo root and that `./setup.sh` completed.
 
 Then ask:
 
@@ -198,10 +198,10 @@ Let them reason toward a pre-commit hook. Hints, only if stuck:
 Have them install the gate from their working session:
 
 > ```bash
-> ln -sf ../../scripts/pre-commit .git/hooks/pre-commit
+> git config core.hooksPath scripts
 > ```
 
-(If `practice-repo/triage` isn't its own git repo in their setup, have them run
+(If their copy isn't its own git repo, have them run
 `git init` there first, or run the gate manually as `.venv/bin/python -m pytest
 -q && .venv/bin/python -m eval.run` — the lesson is the gate, not git plumbing.)
 

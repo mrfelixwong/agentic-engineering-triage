@@ -44,11 +44,37 @@ triage/
 ## Setup and run
 
 ```bash
-python3 -m venv .venv
-.venv/bin/pip install -e .
-.venv/bin/pip install -e '.[dev]'        # pytest + FastAPI TestClient
+./setup.sh
+```
 
-# tests — one is RED on purpose (the seeded bug); the rest are green
+That builds `.venv` and installs the app plus its test tools. It uses [uv](https://docs.astral.sh/uv/)
+if you have it and falls back to the standard library's `venv` if you don't.
+
+**uv is the recommended path**, and the one the course deck uses. The `venv`
+fallback depends on your Python being both new enough and able to bootstrap pip,
+and there are common builds where it isn't:
+
+- **Python 3.10 or newer is required** (`pyproject.toml`, `requires-python`).
+  macOS ships 3.9.6, so on a stock Mac the fallback cannot work at all.
+- Some Python builds fail to install pip into a new venv. Homebrew's 3.14.5 is
+  one, as of 2026-07-31.
+
+`setup.sh` detects both and tells you to install uv rather than failing inside
+pip. If you would rather run the steps by hand:
+
+```bash
+# with uv (what the course deck uses)
+uv venv .venv && uv pip install -e . && uv pip install -e '.[dev]'
+
+# without uv — needs a system Python >= 3.10
+python3 -m venv .venv && .venv/bin/pip install -e . && .venv/bin/pip install -e '.[dev]'
+```
+
+Then check the seeded state:
+
+```bash
+# tests — the seeded bug fails one test function in two parametrized cases,
+# so pytest reports "2 failed, 7 passed, 1 warning". The rest are green.
 .venv/bin/pytest -q
 
 # eval — exits non-zero while the bug is present (0.70 < 0.80 baseline)
@@ -80,8 +106,8 @@ it flail, then write a `CLAUDE.md` and watch the flailing shrink. Coached:
    failure is the lab — it encodes the behavior you need to make true.
 2. Have the agent investigate and fix the root cause, then loop until the test
    is green and `python -m eval.run` exits 0.
-3. Install the gate so the fix can't regress:
-   `ln -sf ../../scripts/pre-commit .git/hooks/pre-commit`.
+3. Install the gate so the fix can't regress: `git config core.hooksPath scripts`.
+   (Not a symlink into `.git/hooks` — see the note at the top of `scripts/pre-commit`.)
 
 Want it coached? In Claude Code, run the lesson skill in
 `.claude/skills/lesson-3-1-verification/`. The ground-truth answer is in

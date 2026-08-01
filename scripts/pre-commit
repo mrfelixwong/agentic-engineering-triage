@@ -4,12 +4,19 @@
 # Refuses the commit if the test suite fails or the eval drops below baseline.
 # This is the gate Part 3 of the verification lesson installs. Install it with:
 #
-#   ln -sf ../../scripts/pre-commit .git/hooks/pre-commit
+#   git config core.hooksPath scripts
 #
-# Run from the repo root. Uses the project venv if present.
+# Do NOT symlink it into .git/hooks. Git runs a hook with $0 pointing at the
+# symlink's own path, so "$(dirname "$0")/.." resolves to .git/ rather than the
+# repo, the venv is never found, and the gate fails with "No module named
+# pytest" on a green tree as loudly as on a red one. A gate that refuses
+# everything teaches nothing and gets uninstalled by the first person it blocks.
+#
+# Uses the project venv if present.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Resolve the repo, not the hook's location — works however the hook is invoked.
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 if [ -x ".venv/bin/python" ]; then
