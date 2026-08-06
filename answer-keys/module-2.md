@@ -1,75 +1,96 @@
-# Answer Key — Module 2 (Specification)
+# Answer Key - Module 2 (Specification)
 
-Ground truth for the spec slice. **Spoilers.** Don't read this until you've written your own spec and built the
-feature — it shows a finished spec and one valid implementation.
+Ground truth for the specification lab. **Spoilers.** Write and review your own
+spec before reading this file.
 
-## The exercise (build-forward)
-
-The request is deliberately vague: *"add a confidence score to the classification output."* Turn it into a spec
-— acceptance criteria, steps, constraints — then drive the agent to build it. You are *constructing* a new
-feature and proving it works, not fixing a planted bug.
-
-## A Great spec
+## The vague request
 
 ```text
-Goal: add a `confidence` field (float, 0.0–1.0) to the classifier output.
-
-Acceptance criteria:
-  - every Classification includes `confidence`, with 0.0 <= confidence <= 1.0
-  - a clearly on-topic ticket (a billing keyword) scores higher than one that
-    falls through to `general`
-  - existing tests still pass; the eval holds its 0.80 baseline
-
-Steps:
-  1. add `confidence: float` to `Classification` (app/models.py), constrained 0–1
-  2. compute it in the offline stub (app/llm/client.py): return (category, confidence)
-  3. thread it through `classify_ticket` (app/triage/classify.py)
-
-Constraints:
-  - don't change the routing / `_ALIASES` logic
-  - keep it deterministic offline (no API key needed)
-
-Show me the plan before editing anything.
+Add a confidence score from 0 to 1. Plan first.
 ```
+
+This leaves Claude to choose the meaning of confidence, the values, the files,
+the tests, and whether unrelated billing work is in scope.
+
+## A complete specification
+
+```text
+GOAL
+Classification returns a confidence value that tells the caller whether the category came from a matched rule or from the fallback.
+
+CONTEXT
+Read app/models.py, app/triage/classify.py, and tests/test_classify.py.
+
+ACCEPTANCE
+A keyword-rule match scores 0.9.
+The general fallback scores 0.3.
+The value is never outside 0.0-1.0.
+One test covers a keyword match.
+One test covers the fallback.
+
+CONSTRAINTS / NON-GOALS
+Only edit the files named above.
+Do not change eval/.
+Do not fix the billing bug.
+
+VERIFICATION
+Run .venv/bin/pytest -q and paste the output.
+
+PLAN FIRST
+Show the plan and files before editing.
+```
+
+The student now owns all 7 important fields: goal, context, acceptance,
+constraints, non-goals, verification, and plan-first.
 
 ## One valid implementation
 
-`app/models.py` — add to `Classification`:
+In `app/models.py`, add a bounded field to `Classification`:
 
 ```python
-confidence: float = Field(1.0, ge=0.0, le=1.0, description="0–1 confidence in the label.")
+confidence: float = Field(
+    0.3, ge=0.0, le=1.0, description="0.0-1.0 confidence in the label."
+)
 ```
 
-`app/llm/client.py` — have the stub return a confidence alongside the category, then thread it through so it
-reaches the `Classification`:
+In `app/triage/classify.py`, return both the normalized category and confidence:
 
 ```python
-def classify_via_stub(subject: str, body: str) -> tuple[str, float]:
-    text = f"{subject}\n{body}".lower()
-    for category, keywords in _STUB_RULES:
-        if any(k in text for k in keywords):
-            return category, 0.9     # a keyword matched -> high confidence
-    return "general", 0.3            # fell through -> low confidence
+_MATCH_CONFIDENCE = 0.9
+_FALLBACK_CONFIDENCE = 0.3
+
+
+def _normalize(raw: str) -> tuple[Category, float]:
+    key = raw.strip().lower()
+    if key == "general":
+        return Category.GENERAL, _FALLBACK_CONFIDENCE
+    if key in _ALIASES:
+        return _ALIASES[key], _MATCH_CONFIDENCE
+    try:
+        return Category(key), _MATCH_CONFIDENCE
+    except ValueError:
+        return Category.GENERAL, _FALLBACK_CONFIDENCE
 ```
 
-(The LLM path can default to a fixed confidence, e.g. `1.0`, until you ask the model for one.)
+Pass both values into `Classification`, then add one keyword-match test and one
+fallback test in `tests/test_classify.py`.
 
-## Verify (build-forward grading)
+## Expected verification
 
-After building, copy this into `tests/` and run `pytest` — it should pass:
-
-```python
-from app.models import Ticket
-from app.triage.classify import classify_ticket
-
-def test_confidence_is_in_range_and_informative():
-    strong = classify_ticket(Ticket(id="T-1", subject="Refund", body="I was charged twice"))
-    weak   = classify_ticket(Ticket(id="T-2", subject="Hi", body="just saying hello"))
-    assert 0.0 <= strong.confidence <= 1.0
-    assert 0.0 <= weak.confidence <= 1.0
-    assert strong.confidence > weak.confidence   # a clear billing ticket beats an ambiguous one
+```text
+pytest: 2 failed, 9 passed
+eval:   7/10 correct = 0.70, FAIL
 ```
 
-You did it right if that test passes, every `Classification` carries a confidence in range, and the existing
-tests and the eval still hold. The spec is the real artifact here: a vague request became something the agent
-could build and you could check.
+The two new confidence tests pass. The existing billing cases stay red because
+the spec explicitly says not to fix billing. That is expected, not a failed
+confidence implementation.
+
+The build should change only:
+
+- `app/models.py`
+- `app/triage/classify.py`
+- `tests/test_classify.py`
+
+If the plan edits `app/llm/client.py`, `eval/`, or the billing alias, cut those
+steps before code.

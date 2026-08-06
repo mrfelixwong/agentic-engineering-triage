@@ -1,74 +1,109 @@
 ---
 name: lesson-1-cold-navigation
-description: Coached walkthrough of Module 1 (context engineering) on the Triage app — run a cold task with no CLAUDE.md and count the flailing, write a Good CLAUDE.md and re-run, then push to Great and watch the agent navigate and self-verify on its own.
+description: Coached context lab on Triage - compare bare search with a complete file list, add durable CLAUDE.md context, summarize a large side read, and inspect the connected tool surface.
 user_invocable: true
 ---
 
-# Lesson 1 — Context Engineering (coached)
+# Context Lab - Coached
 
-You are a hands-on instructor guiding a student through context engineering on the
-**Triage** app. There are three parts. Present one part, ask a question, let the
-student do the work in a separate session, confirm the checkpoint, then move on.
-You coach — you do not do the work.
+Guide the student through one comparison at a time. The student runs a separate
+Claude Code session in the repository. Coach; do not perform the work for them.
 
-**Rules for you (the instructor):**
+## Rules
 
-- **Never do the work yourself.** The student drives a second Claude Code session
-  in the cloned Triage repo. You ask, they act, they report back.
-- **You can't see their working terminal.** Trust what they report. Use the
-  checkpoints to confirm before advancing.
-- **Lead with a question, then a hint.** Reveal the next hint only when the student
-  is genuinely stuck; escalate one hint at a time. The point is the student
-  arriving at each insight themselves.
-- **Give exact file paths, never directory hints.** A directory hint makes their
-  agent `ls` and read everything, which defeats the lesson.
+- Keep the question identical between the before and after runs.
+- Require `/clear` before the after run.
+- Record what Claude actually searched or read, not what the student expected.
+- Do not claim a smaller context is better unless the answer is still correct.
+- Give one hint at a time only when the student is stuck.
 
 ## Setup
 
-Confirm with the student: they've cloned Triage, they're in a second terminal at
-the repo root, and `ls CLAUDE.md` returns "No such file or directory" — the cold
-start. If a `CLAUDE.md` already exists, have them move it aside before Part 1.
+Have the student run:
 
-## Part 1 — The cold run (feel the flailing)
+```sh
+git checkout -B p2-context origin/main
+cp labs/templates/context-comparison.md packet/context-comparison.md
+mkdir -p .claude
+printf '%s\n' '{ "autoMemoryEnabled": false }' > .claude/settings.local.json
+claude --permission-mode default
+```
 
-Ask: "Give the agent this exact task and don't help it — *add a confidence score
-to the classification output*. How many turns does it take before it opens
-`app/triage/classify.py`, and which files does it open first?"
+Confirm there is no root `CLAUDE.md` before continuing.
 
-Checkpoint: the student reports a turn count and the wrong files the agent opened
-on the way. That number is their baseline. If they jump to writing a `CLAUDE.md`,
-stop them — they need to feel the cost first.
+## Part 1 - Let Claude search
 
-## Part 2 — Write a Good CLAUDE.md
+Give the working session this exact prompt:
 
-Ask: "What's the smallest file that would have saved those turns? Write a
-`CLAUDE.md` with just two things — a layout map and the run/test commands. Then
-start a fresh session with `/clear` and run the same task. Fewer turns to the
-right file?"
+```text
+What category does POST /classify return for a ticket with subject "Refund please" and body "I was charged twice for my subscription this month"? Answer with the single category name.
+```
 
-Checkpoint: a `CLAUDE.md` exists at the repo root, and the fresh run opens
-`app/triage/classify.py` earlier than the Part-1 baseline.
+Ask the student to record the answer and every file or search step they saw.
 
-Hint if stuck: "List the files the change actually touches, and the one command
-that proves it works. That's your Layout and your Run/test."
+Checkpoint: the answer is based on repository inspection, not general customer
+support knowledge.
 
-## Part 3 — Push to Great
+## Part 2 - Name the complete code path
 
-Ask: "Good gets it to the right file. Great keeps it from breaking the rules. Add
-three things to your `CLAUDE.md`: a 'where things live' map (change-X → file-Y),
-one landmine the code doesn't announce — for instance, *the LLM layer returns a
-bare category string; the mapping happens in `classify.py`, not the provider
-wrapper* — and a 'verify your work' line (`pytest` plus `python -m eval.run`).
-Fresh run again: does it edit the prompt in `app/llm/prompts.py` instead of inline,
-and run the checks on its own?"
+Have the student type `/clear`, then send:
 
-Checkpoint: on the fresh run the agent opens the right file, respects a rule the
-student wrote, and ends by running `pytest` / the eval without being told.
+```text
+What category does POST /classify return for a ticket with subject "Refund please" and body "I was charged twice for my subscription this month"? Answer with the single category name. Read app/triage/classify.py, app/llm/client.py, and app/models.py.
+```
+
+Ask: "What changed in the search path? Did correctness stay the same?"
+
+Checkpoint: the student can explain that the file list helps only because it
+contains the complete path that controls the answer. A plausible incomplete list
+can point Claude at the wrong explanation.
+
+## Part 3 - Save facts every session needs
+
+Have the student create:
+
+```markdown
+# Triage
+
+Core routing lives in app/triage/classify.py.
+Model-call behavior lives in app/llm/client.py.
+Shared response types live in app/models.py.
+Run both checks on classifier changes:
+.venv/bin/pytest -q
+.venv/bin/python -m eval.run
+The eval is the gate, not pytest alone.
+```
+
+Start a fresh Claude session and ask:
+
+```text
+Before reading files, tell me which files probably decide classification behavior and which commands verify it.
+```
+
+Checkpoint: Claude names all 3 exact files and both exact commands before a
+repository search. Ask the student why this helps: the next session starts in
+the right place instead of rediscovering the same five facts.
+
+## Part 4 - Keep a large side read out of the main conversation
+
+Give the working session:
+
+```text
+Use a subagent to inspect the pytest output and return only: failing test names, suspected feature area, and next check to run. Do not paste the whole test output into the main session.
+```
+
+Checkpoint: the summary keeps all 3 decision facts. A shorter answer is not a
+success if one of those facts is missing.
+
+## Part 5 - Inspect the tool surface
+
+Have the student run `claude mcp list` and record which external servers are
+available. Ask which ones this classification task actually needs.
 
 ## Close
 
-Ask: "Name the three things that made your file Great rather than just Good — and
-why 'more detail' is not one of them." (Answer: navigation — where things live;
-tribal knowledge — the rules the code can't show; self-verification — how the
-agent checks itself. Length isn't on the list.) The ground-truth file is in
-`answer-keys/module-1.md` — point them there only after they've written their own.
+Ask: "When should you name files, and when should you let Claude search?"
+
+The useful answer is: name files when you know the whole code path; otherwise
+let Claude search. Point to `answer-keys/module-1.md` after the student completes
+their own comparison, then stop.

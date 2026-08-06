@@ -1,92 +1,54 @@
-# Answer Key — Module 1 (Context Engineering)
+# Answer Key - Module 1 (Context Engineering)
 
-Ground truth for the context slice. **Spoilers.** Don't read this until you've
-tried writing a `CLAUDE.md` yourself — it shows the finished file.
+Ground truth for the context lab. **Spoilers.** Try the before/after comparison
+before reading this file.
 
-## The seeded imperfection
+## The seeded problem
 
-The repo ships with **no top-level `CLAUDE.md`** and a layout you have to learn
-cold. A fresh agent grep-scans the tree and opens the wrong files before it finds
-`app/triage/classify.py` and `app/llm/prompts.py`. The exercise is to write the
-instruction file that removes that flailing.
+The repository has no top-level `CLAUDE.md`. A new session must discover the
+important files and check commands again. The exercise is to save the small set
+of facts that every classifier task needs.
 
-## What "Good" looks like
-
-A real map plus the commands to run — enough that a newcomer agent can navigate
-and verify a build:
+## The useful file
 
 ````markdown
-# CLAUDE.md — Triage
+# Triage
 
-A support-ticket assistant: classify a ticket, retrieve similar past tickets,
-draft a reply.
-
-## Layout
-- `app/main.py` — FastAPI entrypoint
-- `app/triage/classify.py` — core classification
-- `app/llm/` — provider wrapper (`client.py`) and prompts (`prompts.py`)
-- `eval/` — offline eval set + runner
-
-## Run / test
-- Test: `pytest`
-- Eval: `python -m eval.run`
+Core routing lives in app/triage/classify.py.
+Model-call behavior lives in app/llm/client.py.
+Shared response types live in app/models.py.
+Run both checks on classifier changes:
+.venv/bin/pytest -q
+.venv/bin/python -m eval.run
+The eval is the gate, not pytest alone.
 ````
 
-## What "Great" looks like
+This is enough because it answers five questions before a search:
 
-Navigational (where to look, not a description of the tree), the tribal knowledge
-the code can't show, and a way for the agent to check its own work. This is the
-file the repo is meant to have:
+1. Which file controls routing?
+2. Which file controls model-call behavior?
+3. Which file defines the shared response shape?
+4. What command runs the tests?
+5. What command runs the eval gate?
 
-````markdown
-# CLAUDE.md — Triage
+In the captured comparison, the before response named 0 of these 5 facts
+exactly. The after response named all 5. The benefit is not that `CLAUDE.md` is
+longer; the next session starts at the real files and checks.
 
-Read this first. It's the map of the repo, so you don't have to grep the tree to
-orient yourself.
+## The important limit
 
-## What this is
+Naming files helps only when the list is complete. In the course benchmark, a
+complete three-file list stayed correct while using less context than bare
+search. A plausible but incomplete two-file list was wrong in all 6 primary
+Sonnet runs.
 
-**Triage** is a small support-ticket assistant: an LLM reads an incoming ticket
-and assigns one category (`billing` / `bug` / `account` / `feature_request` /
-`general`). It's the Practice Repo for the *Agentic Engineering* curriculum.
+Use this rule:
 
-## Runs offline by default
+- Know the whole code path: name the files.
+- Unsure about the path: let Claude search.
 
-The classifier ships with a deterministic offline stub (keyword rules in
-`app/llm/client.py`). Tests and the eval run with no API key and no network. Set
-`TRIAGE_USE_LLM=1` (with `ANTHROPIC_API_KEY`) to route through Claude.
+## Why the file is not on main
 
-## Where things live (start here)
-
-- Change classification logic → `app/triage/classify.py` (the routing seam lives
-  here — read it carefully).
-- Change wording the model sees → `app/llm/prompts.py` (NOT inline in classify).
-- Change models/providers → `app/llm/client.py` only.
-- Tests → `tests/`; the eval → `eval/run.py` (`python -m eval.run`).
-
-## Non-obvious rules (the landmines)
-
-- The LLM layer returns a **bare category string**; mapping to the `Category`
-  enum happens in `classify.py`, not in the provider wrapper.
-- Default model is `claude-opus-4-8` with adaptive thinking — don't pin an older
-  model or set `budget_tokens`.
-- Adding a category is a three-step change: the `Category` enum (`models.py`),
-  the prompt's category guide (`prompts.py`), and any routing in `_ALIASES`
-  (`classify.py`).
-
-## Verify your work
-
-`pytest` must pass; the eval (`python -m eval.run`) must hold its `0.80` baseline.
-````
-
-## Why it's Great (not just long)
-
-- **Navigational** — "where things live" names the file to open per task, so the
-  agent stops grepping.
-- **Tribal knowledge** — the bare-string rule, the default-model rule, and the
-  three-step "add a category" are landmines the code doesn't announce.
-- **Self-verification** — it ends by telling the agent how to check its own work.
-
-You did it right if, in a fresh session with your file in place, the agent opens
-`app/triage/classify.py` (or `app/llm/prompts.py` for a prompt change) without you
-naming the path, and respects at least one rule you wrote.
+Writing `CLAUDE.md` is the exercise. Shipping the answer at the repository root
+would remove the cold-start before state. Keep your completed file in your lab
+branch or packet.

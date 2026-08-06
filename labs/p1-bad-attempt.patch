@@ -1,0 +1,13 @@
+diff --git a/app/triage/classify.py b/app/triage/classify.py
+index aaec84d..b85d0a7 100644
+--- a/app/triage/classify.py
++++ b/app/triage/classify.py
+@@ -20,6 +20,8 @@ from app.models import Category, Classification, Ticket
+ # that aren't exact enum values get folded to their intended category here.
+ _ALIASES: dict[str, Category] = {
+     "billing": Category.GENERAL,  # legacy: route billing through the general queue
++    "charged": Category.BILLING,
++    "refund": Category.BILLING,
+     "payments": Category.BILLING,
+     "bug": Category.BUG,
+     "defect": Category.BUG,

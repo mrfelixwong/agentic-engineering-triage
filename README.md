@@ -6,10 +6,10 @@ is the **Practice Repo** for the *Agentic Engineering* curriculum — a real,
 runnable app seeded with deliberate imperfections, each tied to a module's
 exercise and a ground-truth answer key.
 
-It serves several curriculum modules at once — different aspects of one realistic,
-imperfect codebase: there is **no `CLAUDE.md`** to navigate by (Module 1), a seeded
-classification bug to catch (Module 3), and more to come. Each module's lab targets
-one; do the module you're on, on a fresh clone.
+It serves several curriculum modules at once - different aspects of one realistic,
+imperfect codebase. There is **no `CLAUDE.md`** to navigate by, the classifier has
+a seeded routing bug, and the `labs/` directory carries the live-class workflow
+for teaching points 1-4. Start each lab from a fresh branch.
 
 > Runs **offline by default** — a deterministic stub classifier means tests and
 > the eval need no API key and no network. Set `TRIAGE_USE_LLM=1` (with
@@ -31,6 +31,10 @@ triage/
   eval/
     cases.jsonl        # held-out eval set
     run.py             # python -m eval.run — scores + baseline gate
+  labs/
+    README.md          # complete local labs for teaching points 1-4
+    p1-bad-attempt.patch
+    templates/         # blank packet records for each lab
   answer-keys/
     module-0.md        # ground truth: the agent loop (spoilers)
     module-1.md        # ground truth: the CLAUDE.md you write (spoilers)
@@ -92,6 +96,11 @@ curl -s localhost:8000/classify -H 'content-type: application/json' \
 This one repo carries several modules' labs. Each is independent and best done on a
 fresh clone.
 
+For the current live-class sequence covering teaching points 1-4, start at
+[`labs/README.md`](labs/README.md). It contains the complete local workflow,
+the prepared bad attempt, reset commands, exact Claude prompts, expected check
+results, and packet templates. No file from the course-materials repo is needed.
+
 **Module 0 — watch the loop.** Give the agent a small task (e.g. add a docstring to
 `classify_ticket`) and narrate its perceive → plan → act → observe loop; name the
 first failure mode you see. Ground truth: `answer-keys/module-0.md`.
@@ -100,18 +109,28 @@ first failure mode you see. Ground truth: `answer-keys/module-0.md`.
 it flail, then write a `CLAUDE.md` and watch the flailing shrink. Coached:
 `.claude/skills/lesson-1-cold-navigation/`. Ground truth: `answer-keys/module-1.md`.
 
+**Module 2 — specification.** Start with `Add a confidence score from 0 to 1.
+Plan first.`, stop before code, then replace the missing decisions with the full
+spec in `labs/README.md`. Ground truth: `answer-keys/module-2.md`.
+
 **Module 3 — verification.**
 
 1. Run `pytest`. One test fails: `test_billing_ticket_is_labeled_billing`. That
    failure is the lab — it encodes the behavior you need to make true.
 2. Have the agent investigate and fix the root cause, then loop until the test
    is green and `python -m eval.run` exits 0.
-3. Install the gate so the fix can't regress: `git config core.hooksPath scripts`.
-   (Not a symlink into `.git/hooks` — see the note at the top of `scripts/pre-commit`.)
+3. Install the gate before the fix and watch it refuse the known-red state:
+   `git config core.hooksPath scripts`.
+4. Fix the behavior without changing tests, then watch the same gate accept the
+   verified commit. Do not symlink into `.git/hooks`; see `scripts/pre-commit`.
 
 Want it coached? In Claude Code, run the lesson skill in
 `.claude/skills/lesson-3-1-verification/`. The ground-truth answer is in
 `answer-keys/module-3.md` (don't peek until you've tried it).
+
+**Module 4 — reusable checks.** Turn the repeated pytest + eval workflow into a
+Claude skill that makes the pass/fail decision. Coached:
+`.claude/skills/lesson-4-skills/`. Ground truth: `answer-keys/module-4.md`.
 
 ## Use a real model
 
