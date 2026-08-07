@@ -14,7 +14,7 @@ session you will have closed.
 | File | Which exercise makes it | What it holds |
 |---|---|---|
 | `recovery.md` | 1 | The bad attempt, failed layer, restore, one changed retry, and result |
-| `context-comparison.md` | 2 | What Claude searched or read before and after the context change |
+| `context-comparison.md` | 2 | The stop before an unavailable fact, the owner-supplied value, and proof after |
 | `spec.md` | 3 | The spec you wrote: goal, context, acceptance, constraints, verification |
 | `diff.patch` | 4 | The change itself — `git diff` of the billing fix |
 | `evidence.md` | 4 | The gate refusing on red, then admitting on green. Paste both, verbatim |

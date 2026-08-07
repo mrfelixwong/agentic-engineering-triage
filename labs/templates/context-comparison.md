@@ -1,26 +1,38 @@
-# Context Comparison
+# Context Boundary
 
-Question asked in both runs:
+## Before the authoritative source
 
-## Before
+Missing fact requested:
 
-Prompt:
+Claude's full question or response:
 
-Files or search path observed:
+Repository searches observed:
 
-Answer:
+`git diff --exit-code` output and exit code:
 
-## After
+Was the result supported? Why?
 
-Prompt:
+## After the authoritative source
 
-Files read:
+Named authority and decision ID:
 
-Answer:
+Exact value supplied by the instructor:
 
-What changed for me as the student:
+Claude's full response:
 
-`CLAUDE.md` line that should stay:
+Focused test output:
+
+Relevant diff:
+
+Did code and test preserve the exact supplied value? Why?
+
+## What stays
+
+Student impact in one sentence:
+
+`CLAUDE.md` rule that should stay:
+
+Optional file-search efficiency evidence:
 
 Subagent summary, if run:
 

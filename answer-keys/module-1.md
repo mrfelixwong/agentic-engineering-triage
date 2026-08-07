@@ -1,54 +1,46 @@
 # Answer Key - Module 1 (Context Engineering)
 
-Ground truth for the context lab. **Spoilers.** Try the before/after comparison
+Ground truth for the context lab. **Spoilers.** Complete the stop-and-ask run
 before reading this file.
 
-## The seeded problem
+## What is deliberately missing
 
-The repository has no top-level `CLAUDE.md`. A new session must discover the
-important files and check commands again. The exercise is to save the small set
-of facts that every classifier task needs.
+The exact production queue ID on the instructor's Customer Operations card does
+not exist anywhere in this repository. That is the lesson control. A file search,
+answer key search, stronger model, or longer reasoning run cannot recover a value
+that no accessible source contains.
 
-## The useful file
+The correct result before the instructor card is:
 
-````markdown
-# Triage
+1. Claude searches the repository.
+2. Claude asks one specific question for the authoritative production queue ID.
+3. `git diff --exit-code` exits 0 because Claude made no edit.
 
-Core routing lives in app/triage/classify.py.
-Model-call behavior lives in app/llm/client.py.
-Shared response types live in app/models.py.
-Run both checks on classifier changes:
-.venv/bin/pytest -q
-.venv/bin/python -m eval.run
-The eval is the gate, not pytest alone.
-````
+Any concrete queue ID before the card is unsupported, even if it looks plausible.
 
-This is enough because it answers five questions before a search:
+## What changes after the card
 
-1. Which file controls routing?
-2. Which file controls model-call behavior?
-3. Which file defines the shared response shape?
-4. What command runs the tests?
-5. What command runs the eval gate?
+Use the exact value the instructor provides. The focused test
+`tests/test_api.py::test_owner_queue_is_bug_only` must exit 0, and the diff
+must show that bug tickets use that exact value while every other category uses
+`null`. This answer key intentionally does not repeat the ID, because storing it
+here would make the first run a search exercise again.
 
-In the captured comparison, the before response named 0 of these 5 facts
-exactly. The after response named all 5. The benefit is not that `CLAUDE.md` is
-longer; the next session starts at the real files and checks.
+## The durable context
 
-## The important limit
+The line worth keeping is the decision rule:
 
-Naming files helps only when the list is complete. In the course benchmark, a
-complete three-file list stayed correct while using less context than bare
-search. A plausible but incomplete two-file list was wrong in all 6 primary
-Sonnet runs.
+```markdown
+## External contracts
+Never infer a queue, customer, or schema ID from its name. If the repo has no authoritative value, stop and ask before editing.
+```
 
-Use this rule:
+`CLAUDE.md` supplies that rule to future sessions. It does not enforce the rule;
+the focused test, diff review, and named authority provide the evidence.
 
-- Know the whole code path: name the files.
-- Unsure about the path: let Claude search.
+## File names still have a smaller use
 
-## Why the file is not on main
-
-Writing `CLAUDE.md` is the exercise. Shipping the answer at the repository root
-would remove the cold-start before state. Keep your completed file in your lab
-branch or packet.
+If you already know the code path, naming it can reduce search time and context.
+If you do not know it, let a capable model search and explain what it found. That
+comparison measures efficiency only. It does not prove that a person must list
+every repository file for Claude to be correct.

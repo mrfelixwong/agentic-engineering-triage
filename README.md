@@ -105,8 +105,10 @@ results, and packet templates. No file from the course-materials repo is needed.
 `classify_ticket`) and narrate its perceive → plan → act → observe loop; name the
 first failure mode you see. Ground truth: `answer-keys/module-0.md`.
 
-**Module 1 — context.** There's no `CLAUDE.md`. Give the agent a cold task and watch
-it flail, then write a `CLAUDE.md` and watch the flailing shrink. Coached:
+**Module 1 — context.** Let the agent search the whole repository, then watch it
+stop because an external production queue ID is genuinely absent. Supply the
+named owner's decision, verify the exact value, and keep the durable no-inference
+rule in `CLAUDE.md`. Coached:
 `.claude/skills/lesson-1-cold-navigation/`. Ground truth: `answer-keys/module-1.md`.
 
 **Module 2 — specification.** Start with `Add a confidence score from 0 to 1.

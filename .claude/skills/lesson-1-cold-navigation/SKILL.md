@@ -1,6 +1,6 @@
 ---
 name: lesson-1-cold-navigation
-description: Coached context lab on Triage - compare bare search with a complete file list, add durable CLAUDE.md context, summarize a large side read, and inspect the connected tool surface.
+description: Coached context lab on Triage - distinguish searchable repository evidence from an unavailable external value, save the durable no-inference rule, summarize a large side read, and inspect the connected tool surface.
 user_invocable: true
 ---
 
@@ -11,10 +11,10 @@ Claude Code session in the repository. Coach; do not perform the work for them.
 
 ## Rules
 
-- Keep the question identical between the before and after runs.
-- Require `/clear` before the after run.
-- Record what Claude actually searched or read, not what the student expected.
-- Do not claim a smaller context is better unless the answer is still correct.
+- Never reveal or store the instructor's production queue ID before Claude asks.
+- Record what Claude actually searched, asked, edited, and verified.
+- Treat any invented queue ID or pre-question edit as a failed run.
+- Keep the optional file-name comparison separate; it measures efficiency only.
 - Give one hint at a time only when the student is stuck.
 
 ## Setup
@@ -26,65 +26,58 @@ git checkout -B p2-context origin/main
 cp labs/templates/context-comparison.md packet/context-comparison.md
 mkdir -p .claude
 printf '%s\n' '{ "autoMemoryEnabled": false }' > .claude/settings.local.json
+rg -n "owner_queue|q_[A-Za-z0-9]+" app tests eval
 claude --permission-mode default
 ```
 
-Confirm there is no root `CLAUDE.md` before continuing.
+Confirm there is no root `CLAUDE.md` and the search prints no matches.
 
-## Part 1 - Let Claude search
+## Part 1 - Let Claude search, then reach the boundary
 
 Give the working session this exact prompt:
 
 ```text
-What category does POST /classify return for a ticket with subject "Refund please" and body "I was charged twice for my subscription this month"? Answer with the single category name.
+Add an optional owner_queue field to Classification. For bug tickets, return the exact production queue ID; for other categories, return null. Keep category behavior unchanged. Add API test test_owner_queue_is_bug_only with one bug and one non-bug. Search the whole repository first. If the exact ID is unavailable, ask one question and stop. Do not invent it.
 ```
 
-Ask the student to record the answer and every file or search step they saw.
+Checkpoint: Claude asks for the authoritative production queue ID. Have the
+student run `git diff --exit-code`; it must exit 0 with no output. If Claude
+invented a value or edited code, ask the student why that evidence is unsafe.
 
-Checkpoint: the answer is based on repository inspection, not general customer
-support knowledge.
+## Part 2 - Supply the named authority
 
-## Part 2 - Name the complete code path
+Wait for Claude's question. Then show the instructor's Customer Operations card
+and have the student paste its sentence into the same session. Do not dictate the
+value before the question.
 
-Have the student type `/clear`, then send:
+Checkpoint: Claude uses the exact supplied value in code and in the focused test.
 
-```text
-What category does POST /classify return for a ticket with subject "Refund please" and body "I was charged twice for my subscription this month"? Answer with the single category name. Read app/triage/classify.py, app/llm/client.py, and app/models.py.
+## Part 3 - Verify the contract
+
+Have the student run:
+
+```sh
+.venv/bin/pytest -q tests/test_api.py::test_owner_queue_is_bug_only
+git diff --check
+git diff -- app/models.py app/triage/classify.py tests/test_api.py
 ```
 
-Ask: "What changed in the search path? Did correctness stay the same?"
+Checkpoint: the focused test exits 0, the exact owner value appears in code and
+test, and every other category uses `null`.
 
-Checkpoint: the student can explain that the file list helps only because it
-contains the complete path that controls the answer. A plausible incomplete list
-can point Claude at the wrong explanation.
-
-## Part 3 - Save facts every session needs
+## Part 4 - Save the repeatable rule
 
 Have the student create:
 
 ```markdown
-# Triage
-
-Core routing lives in app/triage/classify.py.
-Model-call behavior lives in app/llm/client.py.
-Shared response types live in app/models.py.
-Run both checks on classifier changes:
-.venv/bin/pytest -q
-.venv/bin/python -m eval.run
-The eval is the gate, not pytest alone.
+## External contracts
+Never infer a queue, customer, or schema ID from its name. If the repo has no authoritative value, stop and ask before editing.
 ```
 
-Start a fresh Claude session and ask:
+Checkpoint: the file keeps the durable rule, not the one task's queue ID. Explain
+that this is context, not enforcement; the test and review remain necessary.
 
-```text
-Before reading files, tell me which files probably decide classification behavior and which commands verify it.
-```
-
-Checkpoint: Claude names all 3 exact files and both exact commands before a
-repository search. Ask the student why this helps: the next session starts in
-the right place instead of rediscovering the same five facts.
-
-## Part 4 - Keep a large side read out of the main conversation
+## Part 5 - Keep a large side read out of the main conversation
 
 Give the working session:
 
@@ -92,18 +85,18 @@ Give the working session:
 Use a subagent to inspect the pytest output and return only: failing test names, suspected feature area, and next check to run. Do not paste the whole test output into the main session.
 ```
 
-Checkpoint: the summary keeps all 3 decision facts. A shorter answer is not a
-success if one of those facts is missing.
+Checkpoint: the summary keeps the failing test names, suspected feature area,
+and next check. A shorter answer is not a success if one of those is missing.
 
-## Part 5 - Inspect the tool surface
+## Part 6 - Inspect the tool surface
 
 Have the student run `claude mcp list` and record which external servers are
 available. Ask which ones this classification task actually needs.
 
 ## Close
 
-Ask: "When should you name files, and when should you let Claude search?"
+Ask: "When should you name files, let Claude search, or ask an owner?"
 
-The useful answer is: name files when you know the whole code path; otherwise
-let Claude search. Point to `answer-keys/module-1.md` after the student completes
-their own comparison, then stop.
+The useful answer is: name known paths to save search; let Claude discover
+unknown but searchable paths; ask for an unavailable fact before editing. Point
+to `answer-keys/module-1.md` after the student completes the lab, then stop.

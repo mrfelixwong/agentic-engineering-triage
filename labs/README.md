@@ -70,61 +70,87 @@ same prompt.
 
 ## Lab 2: Control the context
 
-**You learn:** Claude answers from the context it receives. A complete file list
-can remove search work; an incomplete list can make the answer wrong.
+**You learn:** separate information Claude can search from information nobody has
+given it. A stronger model may find an omitted repository file. It cannot know an
+external production value that is absent from every source it can access.
 
 ```sh
 git checkout -B p2-context origin/main
 cp labs/templates/context-comparison.md packet/context-comparison.md
 mkdir -p .claude
 printf '%s\n' '{ "autoMemoryEnabled": false }' > .claude/settings.local.json
+rg -n "owner_queue|q_[A-Za-z0-9]+" app tests eval
 claude --permission-mode default
 ```
 
-Ask without naming files:
+The `rg` command should print no matches. That is the control: no runtime source
+or test contains the field or a queue-like value. The instructor's exact value is
+also absent from Git history and is not repeated in the answer key.
+
+Ask Claude to search the whole repository, but do not supply the missing value:
 
 ```text
-What category does POST /classify return for a ticket with subject "Refund please" and body "I was charged twice for my subscription this month"? Answer with the single category name.
+Add an optional owner_queue field to Classification. For bug tickets, return the exact production queue ID; for other categories, return null. Keep category behavior unchanged. Add API test test_owner_queue_is_bug_only with one bug and one non-bug. Search the whole repository first. If the exact ID is unavailable, ask one question and stop. Do not invent it.
 ```
 
-Record what Claude searched. Type `/clear`, then ask the same question with the
-complete code path:
-
-```text
-What category does POST /classify return for a ticket with subject "Refund please" and body "I was charged twice for my subscription this month"? Answer with the single category name. Read app/triage/classify.py, app/llm/client.py, and app/models.py.
-```
-
-Now create durable repository context:
+The expected result is one specific question asking for the authoritative
+production queue ID. Claude should make no edit. Verify that stop condition:
 
 ```sh
-cat > CLAUDE.md <<'EOF'
-# Triage
-
-Core routing lives in app/triage/classify.py.
-Model-call behavior lives in app/llm/client.py.
-Shared response types live in app/models.py.
-Run both checks on classifier changes:
-.venv/bin/pytest -q
-.venv/bin/python -m eval.run
-The eval is the gate, not pytest alone.
-EOF
+git diff --exit-code
 ```
 
-Start a fresh Claude session and ask:
+No output and exit code 0 means the working tree is unchanged. If Claude invents
+an ID or edits code, reject the run as unsupported.
 
-```text
-Before reading files, tell me which files probably decide classification behavior and which commands verify it.
+Wait for the instructor's Customer Operations decision card. Paste that sentence
+into the same Claude session, then let Claude implement. The card supplies both
+the named authority and the exact value; neither is stored in this repository.
+
+Verify the implementation:
+
+```sh
+.venv/bin/pytest -q tests/test_api.py::test_owner_queue_is_bug_only
+git diff --check
+git diff -- app/models.py app/triage/classify.py tests/test_api.py
 ```
 
-The useful repository facts should now be available before a search. For a large
-side read, ask a subagent to return only the decision facts:
+The focused test must exit 0. In the diff, the bug response and its test must use
+the exact value from the card; every other category must use `null`.
+
+Now save the repeatable rule, not this one task's production value:
+
+```sh
+printf '%s\n' \
+  '## External contracts' \
+  'Never infer a queue, customer, or schema ID from its name. If the repo has no authoritative value, stop and ask before editing.' \
+  > CLAUDE.md
+```
+
+For a large side read, ask a subagent to return only the decision facts:
 
 ```text
 Use a subagent to inspect the pytest output and return only: failing test names, suspected feature area, and next check to run. Do not paste the whole test output into the main session.
 ```
 
-Inspect the external tool surface with `claude mcp list`. Record the before and
-after evidence in `packet/context-comparison.md`.
+Inspect the external tool surface with `claude mcp list`. Record one provider this
+local lab does not need; an empty list is fine.
+
+### Optional efficiency comparison
+
+File names are still useful when you already know the code path. They save search;
+they are not the source of truth. In a fresh session, ask this question once bare
+and once with the three files named, recording search actions and whether the
+answer stayed the same:
+
+```text
+What category does POST /classify return for a ticket with subject "Refund please" and body "I was charged twice for my subscription this month"? Answer with the single category name.
+```
+
+For the second run, add: `Read app/triage/classify.py, app/llm/client.py, and
+app/models.py.` Both answers may be correct. The useful comparison is how much
+search happened while correctness stayed the same. Record all evidence in
+`packet/context-comparison.md`.
 
 ## Lab 3: Turn a vague request into a real specification
 
