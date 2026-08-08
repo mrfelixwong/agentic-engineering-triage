@@ -152,6 +152,20 @@ app/models.py.` Both answers may be correct. The useful comparison is how much
 search happened while correctness stayed the same. Record all evidence in
 `packet/context-comparison.md`.
 
+### Optional effort and model-routing review
+
+The file-list comparison above measures context efficiency. It does not tell
+students whether additional reasoning effort improves work quality enough to
+repay its time and cost. Use `labs/effort-review/README.md` to measure that
+tradeoff with executable evidence.
+
+Students strengthen release-safety tests for one correct, frozen change. A
+separate mutation grader tries eight plausible broken implementations. The
+score is the number of production regressions the submitted tests would stop.
+In 40 captured runs, low blocked 4.9 of 8 on average and max blocked 7.7 of 8;
+max took 8.3 times as long. This teaches effort routing without treating a
+longer answer as higher quality.
+
 ## Lab 3: Turn a vague request into a real specification
 
 **You learn:** every missing decision becomes Claude's decision. A complete spec
